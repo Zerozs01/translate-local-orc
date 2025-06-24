@@ -6,7 +6,8 @@ module.exports = {
   entry: {
     content: './src/content.ts',
     popup: './src/popup.ts',
-    background: './src/background.ts'
+    background: './src/background.ts',
+    offscreen: './src/offscreen.js'
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
@@ -38,7 +39,17 @@ module.exports = {
         {
           from: "node_modules/tesseract.js-core/",
           to: "tesseract.js-core"
-        }
+        },
+        {
+          from: "src/offscreen.html", 
+          to: "offscreen.html"
+        },
+        {
+          from: "src/popup.html",
+          to: "popup.html"
+        },
+        { from: "src/assets/pendrive1.png", to: "pendrive1.png" }
+
       ],
     }),
   ]

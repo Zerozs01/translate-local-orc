@@ -939,10 +939,26 @@ async function translateImage(img: HTMLImageElement, overlay: HTMLElement) {
     const ocrResult = await visionResponse.json();
     */
 
-  // ใหม่: เรียกใช้ฟังก์ชัน performOcr ที่อยู่ในไฟล์เดียวกันนี้โดยตรง
-  console.log('[CS] Calling local OCR function...');
-  const ocrResult = await performOcr(croppedImageData);
-  console.log('[CS] Local OCR completed.');
+ // ใหม่: ส่ง Message ไปให้ background script เพื่อให้จัดการ offscreen document
+console.log('[CS] Sending request to background to handle OCR via Offscreen...');
+const ocrResult = await new Promise<any>((resolve, reject) => {
+    const listener = (message: any) => {
+        if (message.type === 'ocr-offscreen-response') {
+            chrome.runtime.onMessage.removeListener(listener);
+            if (message.error) {
+                reject(new Error(message.error));
+            } else {
+                resolve(message.data);
+            }
+        }
+    };
+    chrome.runtime.onMessage.addListener(listener);
+    chrome.runtime.sendMessage({
+        type: 'perform-ocr-in-offscreen',
+        imageData: croppedImageData
+    });
+});
+console.log('[CS] Received OCR result from background/offscreen.');
     // --- สิ้นสุดส่วนที่เปลี่ยนแปลง ---
 
 

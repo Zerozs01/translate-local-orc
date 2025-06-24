@@ -9,7 +9,8 @@
     "scripting",
     "webRequest",
     "desktopCapture",
-    "tabCapture"
+    "tabCapture",
+    "offscreen"
   ],
   "icons": {
     "32": "pendrive1.png"
@@ -40,5 +41,10 @@
         "<all_urls>"
       ]
     }
-  ]
+  ],
+  "offscreen": {
+    "reasons": ["USER_MEDIA"],
+    "justification": "Required for running Tesseract.js OCR in a context that supports Web Workers.",
+    "document_path": "offscreen.html"
+  }
 }

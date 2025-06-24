@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "Instant Manga Translator",
+  "version": "1.0",
+  "description": "Real-time manga translation using camera overlay",
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "scripting",
+    "webRequest",
+    "desktopCapture",
+    "tabCapture"
+  ],
+  "icons":{
+    "32":"pendrive1.png"
+},
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+} 

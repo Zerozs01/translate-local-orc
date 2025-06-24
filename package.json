@@ -1,0 +1,32 @@
+{
+  "name": "manga-translator-extension",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "webpack --config webpack.config.js",
+    "watch": "webpack --config webpack.config.js --watch"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.260",
+    "copy-webpack-plugin": "^12.0.2",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.3.3",
+    "webpack": "^5.90.3",
+    "webpack-cli": "^5.1.4"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "html2canvas": "^1.4.1",
+    "tesseract.js": "^6.0.1"
+  },
+  "contributes": {
+    "configuration": {
+      "properties": {
+        "translateRealtime.enableClaude35SonnetPreview": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable Claude 3.5 Sonnet (Preview) for all clients"
+        }
+      }
+    }
+  }
+}

@@ -863,7 +863,9 @@ async function translateImage(img: HTMLImageElement, overlay: HTMLElement) {
 
 
 
-    // ส่งรูปไป OCR
+    // --- ส่วนที่เปลี่ยนแปลง ---
+    // เดิม: ส่งรูปไป Vision API ด้วย fetch
+    /*
     const visionResponse = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${API_KEY}`, {
       method: 'POST',
       headers: {
@@ -885,17 +887,31 @@ async function translateImage(img: HTMLImageElement, overlay: HTMLElement) {
       })
     });
 
-
-
-
     if (!visionResponse.ok) {
       throw new Error(`Vision API error: ${visionResponse.status}`);
     }
-
-
-
-
     const ocrResult = await visionResponse.json();
+    */
+
+    // ใหม่: ส่งรูปไปให้ background script เพื่อทำ OCR
+    const ocrResult = await new Promise<any>((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        { 
+          type: 'performOcr', 
+          imageData: croppedImageData 
+        },
+        (response) => {
+          if (chrome.runtime.lastError || (response && response.error)) {
+            const errorMessage = response?.error || chrome.runtime.lastError?.message || 'Unknown error during OCR';
+            reject(new Error(errorMessage));
+          } else {
+            resolve(response.data);
+          }
+        }
+      );
+    });
+    // --- สิ้นสุดส่วนที่เปลี่ยนแปลง ---
+
 
     if (!ocrResult.responses?.[0]?.textAnnotations?.length) {
       return;
@@ -1708,7 +1724,7 @@ function shouldSkipTranslation(text: string): boolean {
  
     // เพิ่มรูปแบบโฆษณาแบบซ่อน
     /\[AD\]|\[ad\]|ad:/i,
-    /<!--\s*ad\s*-->/i,
+    //i,
     /data-ad-|data-ads/i,
     /<ins[^>]+adsbygoogle/i,
     
@@ -1780,4 +1796,3 @@ function resetTranslationMode() {
 
 // ประกาศตัวแปรที่ถูกต้อง
 let translationMode: 'normal' | 'ai' = 'normal';
-

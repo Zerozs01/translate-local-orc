@@ -34,6 +34,10 @@ module.exports = {
         {
           from: "src/traineddata",
           to: "traineddata"       
+        },
+        {
+          from: "node_modules/tesseract.js-core/",
+          to: "tesseract.js-core"
         }
       ],
     }),

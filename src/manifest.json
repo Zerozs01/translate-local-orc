@@ -11,9 +11,9 @@
     "desktopCapture",
     "tabCapture"
   ],
-  "icons":{
-    "32":"pendrive1.png"
-},
+  "icons": {
+    "32": "pendrive1.png"
+  },
   "host_permissions": [
     "http://*/*",
     "https://*/*"
@@ -29,5 +29,16 @@
   ],
   "background": {
     "service_worker": "background.js"
-  }
-} 
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "traineddata/*",
+        "tesseract.js-core/*"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ]
+}

@@ -1,8 +1,8 @@
+import { createWorker, Line } from 'tesseract.js';
 import {
   CaptureTabMessage,
   CaptureTabResponse,
   TextAnnotation,
-  VisionResponse,
   TranslationObserver
 } from './types';
 import improveTranslation from './gemini';
@@ -731,7 +731,53 @@ function startRealTimeTranslation(overlay: HTMLElement): TranslationObserver {
     }
   };
 }
+async function performOcr(imageData: string) {
+  console.log('[BG] Received OCR request. Starting process...');
+  let worker;
+  
+  try {
+    console.log('[BG] Step 1: Creating Tesseract worker...');
+    worker = await createWorker('kor+jpn+chi_sim', 1, {
+      corePath: chrome.runtime.getURL('tesseract.js-core/tesseract-core.wasm.js'),
+      logger: (m: any) => console.log(`[BG-Tesseract] ${m.status}: ${(m.progress * 100).toFixed(2)}%`),
+    });
+    console.log('[BG] Step 1: Worker created successfully.');
 
+    console.log('[BG] Step 2: Recognizing image...');
+    const { data } = await worker.recognize(imageData);
+    console.log('[BG] Step 2: Image recognized successfully. Data structure:', data);
+
+    const blocks = data.blocks || [];
+    const allLines: Line[] = blocks.flatMap(block =>
+      block.paragraphs.flatMap(para => para.lines)
+    );
+
+    const textAnnotations = allLines.map((line: Line) => ({
+      description: line.text.replace(/\s/g, ''),
+      boundingPoly: {
+        vertices: [
+          { x: line.bbox.x0, y: line.bbox.y0 },
+          { x: line.bbox.x1, y: line.bbox.y0 },
+          { x: line.bbox.x1, y: line.bbox.y1 },
+          { x: line.bbox.x0, y: line.bbox.y1 }
+        ]
+      }
+    }));
+    
+    console.log('[BG] Step 3: OCR process completed. Sending data back.');
+    return { responses: [{ textAnnotations }] };
+
+  } catch (error) {
+    console.error('[BG] FATAL OCR aERROR:', error);
+    // ส่ง Error กลับไปให้ content script รู้
+    throw new Error('Tesseract.js failed in background: ' + (error as Error).message);
+  } finally {
+    if (worker) {
+      console.log('[BG] Terminating worker.');
+      await worker.terminate();
+    }
+  }
+}
 
 
 
@@ -893,29 +939,18 @@ async function translateImage(img: HTMLImageElement, overlay: HTMLElement) {
     const ocrResult = await visionResponse.json();
     */
 
-    // ใหม่: ส่งรูปไปให้ background script เพื่อทำ OCR
-    const ocrResult = await new Promise<any>((resolve, reject) => {
-      chrome.runtime.sendMessage(
-        { 
-          type: 'performOcr', 
-          imageData: croppedImageData 
-        },
-        (response) => {
-          if (chrome.runtime.lastError || (response && response.error)) {
-            const errorMessage = response?.error || chrome.runtime.lastError?.message || 'Unknown error during OCR';
-            reject(new Error(errorMessage));
-          } else {
-            resolve(response.data);
-          }
-        }
-      );
-    });
+  // ใหม่: เรียกใช้ฟังก์ชัน performOcr ที่อยู่ในไฟล์เดียวกันนี้โดยตรง
+  console.log('[CS] Calling local OCR function...');
+  const ocrResult = await performOcr(croppedImageData);
+  console.log('[CS] Local OCR completed.');
     // --- สิ้นสุดส่วนที่เปลี่ยนแปลง ---
 
 
     if (!ocrResult.responses?.[0]?.textAnnotations?.length) {
+      console.log('[CS] No text found in OCR result.');
       return;
     }
+
 
 
 
@@ -1100,6 +1135,7 @@ async function translateImage(img: HTMLImageElement, overlay: HTMLElement) {
 
   } catch (error) {
     showToast('การแปลผิดพลาด กรุณาลองใหม่อีกครั้ง', 'error');
+    console.error('[CS] Error in translateImage function:', error);
   }
 }
 
